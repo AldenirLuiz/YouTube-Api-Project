@@ -10,18 +10,24 @@ import youtuber
 
 
 class MyYoutube:
-    def __init__(self, vId:str) -> None:
-        self.user_key:str = "AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE"
-                            #AIzaSyDePfTav1_xq8HmMJmjEVKJjzwRif_Y8-w
-                            #AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE <-apiKey
+    def __init__(self, userApi_Key:str, vId:str) -> None:
+
+        self.user_key:str = userApi_Key 
         self.youtube:build = build("youtube", "v3", developerKey=self.user_key, )
         self.id:str = vId
         self.container_videos = list()
 
     def showVideoInfo(self):
-        return self.youtube.playlistItems().list(
-            part="snippet", playlistId=self.id, maxResults=100
-        ).execute()
+        try:
+            my_request = self.youtube.playlistItems().list(
+                part="snippet", playlistId=self.id, maxResults=100
+            ).execute()
+            return my_request
+        except:
+            self.youtube.search().list(
+                q=self.id, part="id, snippet", playlistId=self.id, maxResults=100
+            ).execute()
+        return 
 
 class MyView:
     def __init__(self, root) -> None:
@@ -107,8 +113,8 @@ class MyView:
                     tempFrame, text=f'vId: {item["snippet"]["resourceId"]["videoId"]}', 
                     font=("consolas", 10), anchor="nw"),
                 f"button{count}": Button(
-                    tempFrame, text="Download", relief="flat", bg="green",
-                    foreground="orange", activebackground="cyan", activeforeground="black",
+                    tempFrame, text="Download", relief="flat", bg="cyan",
+                    foreground="orange", activebackground="black", activeforeground="green",
                     command=lambda id=video_id, btt=count: self.download(id, btt)
                 )}
             )
@@ -127,15 +133,17 @@ class MyView:
         video_link: str = f"https://www.youtube.com/watch?v={video_id}"
         # print(video_link)
         button_id: Button = self.widgets[f"button{button}"]
-        button_id.config(text="Attempt to Download", bg="red", foreground="white", state="disabled")
+        button_id.config(text="Attempt to Download", bg="orange", foreground="white", state="disabled")
         self.myFrame02.update_idletasks()
 
         try:
             target = youtuber.GetNewVideo(video_link, False, True)
             self.myFrame02.update_idletasks()
-            print("O daownload do video foi concluido.")
+            print("O download do video foi concluido.")
+            button_id.config(text="Download Concluido", bg="green", foreground="black", state="normal")
+            self.myFrame02.update_idletasks()
         except:
-            button_id.config(text="Erro. Tente Novamente", bg="orange", foreground="black", state="normal")
+            button_id.config(text="Erro. Tente Novamente", bg="red", foreground="black", state="normal")
             self.myFrame02.update_idletasks()
             erro = sys.exc_info()
             print(f"ERRO generico: {erro}")
@@ -203,8 +211,8 @@ class GetThumb(threading.Thread):
 
 
 if __name__ == "__main__":
-    
-    api = MyYoutube("PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
+    your_api_key = "AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE"
+    api = MyYoutube(your_api_key, "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
     itens = api.showVideoInfo()["items"]
     # print(itens[0]["snippet"]["resourceId"]["videoId"])
     view = Tk()
