@@ -64,19 +64,22 @@ class MyView:
         self.widgets.update(
             {"master": self.myFrame02}
         )
-        
 
+        # self.canvas.bind_all("<MouseWheelUp>", self.mouse_up)
+        self.canvas.bind_all("<MouseWheel>", self.mouse_event)
+
+    def mouse_event(self, event):
+        print(event)
+        self.canvas.yview_scroll(int(-1*event.delta/120), "units")
+        
     def get_thumbs(self, values:list):
         for count, link in enumerate(values):
             temp = GetThumb(link["snippet"]["thumbnails"]["default"]["url"], count)
             temp.start()
             temp.join()
             self.img_url.update({
-                f"thumb{count}.jpg": link["snippet"]["thumbnails"]["default"]["url"]
-            })
+                f"thumb{count}.jpg": link["snippet"]["thumbnails"]["default"]["url"]})
         
-
-
     def build_view(self, values:list):
         #self.get_thumbs(values)
         viewFrame = Frame(self.internal_frame)
