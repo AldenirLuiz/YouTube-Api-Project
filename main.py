@@ -1,11 +1,10 @@
 from MyYouTube_API import MyYoutube
-from requests import request
 from tkinter import Tk,  Frame, Label, Canvas, Button, Scrollbar, VERTICAL
 import sys 
 from PIL import ImageTk, Image
 import threading
 import youtuber
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe
 from GetThumbs import GetThumb
 
 
