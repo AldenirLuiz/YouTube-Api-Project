@@ -9,6 +9,7 @@ from multiprocessing import Pipe
 from GetThumbs import GetThumb
 
 
+
 class MyView:
     def __init__(self, root:Tk) -> None:
         self.root:Tk = root
@@ -27,54 +28,56 @@ class MyView:
         self.canvas.create_window((0, 0), window=self.internal_frame, anchor='nw')
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.not_found = ImageTk.PhotoImage(file="notFound.jpg")
-
         self.myLabel = Label(
             self.internal_frame, text="Videos da Playlist:", 
             font=("consolas", 22)).pack(expand=True, fill="both",
             ipadx=4, ipady=4, padx=2, pady=2)
-        
         self.myFrame02.pack(expand=True, fill="both",
             ipadx=4, ipady=4, padx=2, pady=2)
-        
         self.myFrame02.update_idletasks()
         self.internal_frame.update_idletasks()
-
         self.widgets.update(
             {"master": self.myFrame02})
-        
         self.canvas.bind_all("<MouseWheel>", self.mouse_event)
+
+class MyViewController(MyView):
+    def __init__(self, root: Tk) -> None:
+        super().__init__(root)
 
     def mouse_event(self, event):
         self.canvas.yview_scroll(int(-1*event.delta/120), "units")
-
 
     def build_view(self, values:list):
         viewFrame = Frame(self.internal_frame)
         for count, item in enumerate(values):
             tempFrame = Frame(viewFrame, relief="ridge", bd=2)
             video_id=item["snippet"]["resourceId"]["videoId"]
-
+            # Configurando as propriedades da visualizacao dos dados
             self.widgets.update({
                 f"image{count}": Label(tempFrame, text=f"image{count}", image=self.not_found, anchor="sw"),
                 f"text{count}": Label( tempFrame, text=f'{item["snippet"]["title"]}', anchor="sw"),
                 f"descT{count}": Label(tempFrame, text=f'Canal: {item["snippet"]["channelTitle"]}', anchor="sw"),
                 f"descD{count}": Label(tempFrame, text=f'Data: {item["snippet"]["publishedAt"]}', anchor="sw"),
                 f"descId{count}": Label(tempFrame, text=f'vId: {item["snippet"]["resourceId"]["videoId"]}', anchor="sw"),
-                f"button{count}": Button(tempFrame, text="Download", relief="flat", bg="cyan", anchor="center",
-                    command=lambda id=video_id, btt=count: threading.Thread(target=self.download, args=(id, btt)).start())}
-            )
+                f"button{count}": Button( # Configurando o botao e a configuracao de funcionalidade
+                    tempFrame, text="Download", relief="flat", bg="cyan", anchor="center",
+                    command=lambda id=video_id, btt=count: 
+                    threading.Thread(target=self.download, args=(id, btt)).start()
+                )})
+            # Configurando a posicao do frame de widgets na visualizacao
             tempFrame.pack(expand=True, fill="x",
                 ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
             
-            try:
+            try: # Lancando uma requisicao em segundo plano para obter a thumbnail do video 
                 target = self.widgets[f"image{count}"]
                 url = item["snippet"]["thumbnails"]["default"]["url"]
                 _id = item["snippet"]["resourceId"]["videoId"]
                 thread = threading.Thread(target=self.get_thumb, args=(target, url, _id))
                 thread.start()
             except KeyError:
+                # Caso o video estiver indisponivel ou deletado, a thumb nao sera baixada.
                 continue
-            
+        # Adicionando a visualizacao ao frame principal
         viewFrame.pack(expand=True, fill="both",
             ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
         self.myFrame02.config(width=600,height=700)
@@ -150,7 +153,7 @@ class View:
         # Inicializado o Id da playlist
         self.playlist = playlist_key
 
-        self.myView = MyView(self.window)
+        self.myView = MyViewController(self.window)
         
     def get_api(self): # Captura os dados na api do YouTube
         api = MyYoutube(self.api_key, self.playlist)
