@@ -3,9 +3,9 @@
 
 # Media Files
 *.mp4
+thumbs/
 
 # Temp Files
-thumbs
 testes
 MyKeys.json
 

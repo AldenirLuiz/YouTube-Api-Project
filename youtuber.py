@@ -1,14 +1,17 @@
 from pytube import YouTube
 import os
+import sys
+from multiprocessing import Pipe
 from threading import Thread, ThreadError
 
 
 class GetNewVideo:
     
-    def __init__(self, url:str, audio:bool|None=None, download:bool|None=True) -> None:
+    def __init__(self, url:str, audio:bool|None=None, download:bool|None=True, conn:Pipe=None) -> None:
         self.link = url
         self.optinal = audio
         self.source = YouTube(self.link)
+        self.connection: Pipe = conn
 
         if download:
             if audio:
@@ -20,7 +23,15 @@ class GetNewVideo:
         
         source = self.source.streams.get_lowest_resolution()
         print(f"Tamanho do video: {float(source.filesize_kb):.2f}kb")
-        source.download()
+        self.connection.send(f"CONN: Baixando Video: {source.title}")
+        self.connection.send(f"CONN: Tamanho do video: {float(source.filesize_kb):.2f}kb")
+        try:
+            source.download()
+            self.connection.send("Download Concluído")
+            self.connection.close()
+        except:
+            print(f"Um erro ocorreu ao tentar fazer o download: \n\t{sys.exc_info()}")
+
         
             
     def get_audio(self):
