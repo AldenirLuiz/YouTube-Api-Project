@@ -124,29 +124,42 @@ class MyView:
             self.myFrame02.update_idletasks()
             erro = sys.exc_info()
             print(f"ERRO generico: {erro}")
+        
 
+class View:
+    fonts = [
+        ("consolas", 22),
+        ("arial", 16)]
+    api_key = "AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE"
+
+    def __init__(self, playlist_key:str) -> None:
+        self.window = Tk() # Inicializando janela principal
+        self.primary_frame = Frame(self.window)
+        self.primary_label = Label(self.primary_frame, text="Carregando...")
+        self.primary_frame.pack()
+        self.primary_label.pack()
+        # Inicializado o Id da playlist
+        self.playlist = playlist_key
+
+        self.myView = MyView(self.window)
+        
+    def get_api(self): # Captura os dados na api do YouTube
+        api = MyYoutube(self.api_key, self.playlist)
+        return api.showVideoInfo()["items"]
+
+    def build(self): # Chama a visualizacao dos dados
+        # Pegando os dados da playlist
+        self.myView.build_view(values=self.get_api())
+        self.myView.show_view()
+
+        self.primary_frame.destroy() # remove a tela de carregamento
+        self.myView.internal_frame.update_idletasks()
+
+        # Para que o scrow da tela possa funcionar precisa configurar o scrollregion
+        self.myView.canvas.config(scrollregion=self.myView.canvas.bbox("all"))
+        self.window.mainloop() # Passando o loop para o Tkinter
 
 if __name__ == "__main__":
-    your_api_key = "AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE"
-    api = MyYoutube(your_api_key, "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
-    itens = api.showVideoInfo()["items"]
-    # print(itens[0]["snippet"]["resourceId"]["videoId"])
-    view = Tk()
-    frmLoading = Frame(view)
-    labelLoading = Label(
-        frmLoading, text="Carregando...", font=("consolas", 22), anchor="center").pack(
-            expand=True, fill="both", anchor="center",
-            ipadx=4, ipady=4, padx=2, pady=2
-            )
-    frmLoading.pack(expand=True, fill="both", anchor="center",
-            ipadx=4, ipady=4, padx=2, pady=2)
-    view.update_idletasks()
-
-    myView = MyView(view)
-    myView.build_view(values=itens)
-    frmLoading.destroy()
-    myView.show_view()
-    myView.internal_frame.update_idletasks()
-    myView.canvas.config(scrollregion=myView.canvas.bbox("all"))
-    view.after(1000, view.mainloop())
-    
+    # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
+    view = View("PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
+    view.build()
