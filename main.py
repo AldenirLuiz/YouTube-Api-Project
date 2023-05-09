@@ -69,7 +69,8 @@ class MyView:
             try:
                 target = self.widgets[f"image{count}"]
                 url = item["snippet"]["thumbnails"]["default"]["url"]
-                thread = threading.Thread(target=self.get_thumb, args=(target, url, count))
+                _id = item["snippet"]["resourceId"]["videoId"]
+                thread = threading.Thread(target=self.get_thumb, args=(target, url, _id))
                 thread.start()
             except KeyError:
                 continue
@@ -109,21 +110,15 @@ class MyView:
         print("downloading...")
         video_link: str = f"https://www.youtube.com/watch?v={video_id}"
         button_id: Button = self.widgets[f"button{button}"]
-        button_id.config(
-            text="Attempt to Download", 
-            bg="orange", 
-            foreground="white", 
-            state="disabled"
-        )
+        button_id.config(text="Downloading...", bg="orange", state="disabled")
         try:
             target = threading.Thread(
-                youtuber.GetNewVideo(video_link, False, True, child_conn)
-            )
+                youtuber.GetNewVideo(video_link, False, True, child_conn))
             target.start()
             print(parent_conn.recv())
             target.join()
             #print("O download do video foi concluido.")
-            button_id.config(text="Download Concluido", bg="green", state="normal")
+            button_id.config(text="Concluido", bg="green", state="normal")
         except:
             button_id.config(text="Erro. Tente Novamente", bg="red", state="normal")
             self.myFrame02.update_idletasks()
