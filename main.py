@@ -62,8 +62,7 @@ class MyViewController(MyView):
                 f"button{count}": Button( # Configurando o botao e a configuracao de funcionalidade
                     tempFrame, text="Download", relief="flat", bg="cyan", anchor="center",
                     command=lambda id=video_id, btt=count: 
-                    threading.Thread(target=self.download, args=(id, btt)).start()
-                )})
+                    threading.Thread(target=self.download, args=(id, btt)).start())})
             # Configurando a posicao do frame de widgets na visualizacao
             tempFrame.pack(expand=True, fill="x",
                 ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
@@ -114,8 +113,6 @@ class MyViewController(MyView):
         master.update_idletasks()
         target.update()
         
-
-
     def download(self, video_id, button):
         parent_conn, child_conn = Pipe()
         print("downloading...")
@@ -124,17 +121,25 @@ class MyViewController(MyView):
         button_id.config(text="Downloading...", bg="orange", state="disabled")
         try:
             target = threading.Thread(
-                youtuber.GetNewVideo(video_link, False, True, child_conn))
-            target.start()
-            print(parent_conn.recv())
-            target.join()
-            #print("O download do video foi concluido.")
-            button_id.config(text="Concluido", bg="green", state="normal")
+                target=youtuber.GetNewVideo, args=(video_link, False, True, child_conn))
+            # target.start()
+            target.run()
+            if parent_conn.recv():
+                print("targetRuned")
+                if parent_conn.recv():
+                    print("targetJoined")
+                    target.join()
+                    button_id.config(text="Concluido", bg="green", state="normal")
+                    print("O download do video foi concluido.")
+                else:
+                    raise TimeoutError
+            else:
+                raise TimeoutError
         except:
             button_id.config(text="Erro. Tente Novamente", bg="red", state="normal")
             self.myFrame02.update_idletasks()
             erro = sys.exc_info()
-            print(f"ERRO generico: {erro}")
+            print(f"Video Indisponivel: {erro}")
         
 
 class View:
@@ -172,6 +177,7 @@ class View:
         self.window.mainloop() # Passando o loop para o Tkinter
 
 if __name__ == "__main__":
-    # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
-    view = View("PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
+    # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt"
+    # "PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G"
+    view = View("PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G")
     view.build()
