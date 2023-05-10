@@ -33,16 +33,17 @@ class GetNewVideo:
     def get_video(self):
         print("Get_Video")
         source = self.source.streams.get_lowest_resolution()
-        print(source)
+        filesize = source.filesize_kb
+        
         if source != None:
-            # print(f"Tamanho do video: {float(source.filesize_kb):.2f}kb")
-            self.connection.send(True)
-            print("eventSendTRUE")
+            self.connection.send(filesize)
+            print(f"eventSendTRUE | Filesize: {filesize}")
         else:
-            print("eventSendFALSE")
-            self.connection.send(False)
+            print("eventSendNONE")
+            self.connection.send(None)
             print("eventClosed")
-            return
+            raise ConnectionAbortedError
+            
         
         try:
             print("eventDownloadStart")
@@ -54,15 +55,11 @@ class GetNewVideo:
             print("eventErrorDownload")
             self.connection.send(False)
             print(f"Um erro ocorreu ao tentar fazer o download:\n\t{sys.exc_info()}")
-            return
+            raise ConnectionAbortedError
             
     def get_audio(self):
         self.source.streams.get_audio_only.download()
     
-    def get_filesize(self):
-        source = self.source.streams.get_lowest_resolution()
-        return f"{float(source.filesize/1024):.2f}kb"
-
 
 
 if __name__ == "__main__":

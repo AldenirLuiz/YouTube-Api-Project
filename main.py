@@ -1,4 +1,5 @@
 import os
+from random import choice
 from MyYouTube_API import MyYoutube
 from tkinter import Tk,  Frame, Label, Canvas, Button, Scrollbar, VERTICAL
 import sys 
@@ -7,7 +8,7 @@ import threading
 import youtuber
 from multiprocessing import Pipe
 from GetThumbs import GetThumb
-
+from manage import MyKeys as Key
 
 
 class MyView:
@@ -118,18 +119,22 @@ class MyViewController(MyView):
         print("downloading...")
         video_link: str = f"https://www.youtube.com/watch?v={video_id}"
         button_id: Button = self.widgets[f"button{button}"]
-        button_id.config(text="Downloading...", bg="orange", state="disabled")
+        button_id.config(text="Verificando...", bg="orange", state="disabled")
         try:
             target = threading.Thread(
                 target=youtuber.GetNewVideo, args=(video_link, False, True, child_conn))
             # target.start()
             target.run()
-            if parent_conn.recv():
+            filesize = parent_conn.recv()
+            if filesize != None:
+                print(f"filesize: {filesize}")
+                button_id.config(text=f"Downloading: {filesize}", bg="white", state="disabled")
+                self.myFrame02.update_idletasks()
                 print("targetRuned")
                 if parent_conn.recv():
                     print("targetJoined")
-                    target.join()
                     button_id.config(text="Concluido", bg="green", state="normal")
+                    self.myFrame02.update_idletasks()
                     print("O download do video foi concluido.")
                 else:
                     raise TimeoutError
@@ -146,7 +151,7 @@ class View:
     fonts = [
         ("consolas", 22),
         ("arial", 16)]
-    api_key = "AIzaSyBjIt3ll9eYs5KZd6Pd1YDfBmfEf6qd6xE"
+    api_key = choice(Key().keychain)
 
     def __init__(self, playlist_key:str) -> None:
         self.window = Tk() # Inicializando janela principal
