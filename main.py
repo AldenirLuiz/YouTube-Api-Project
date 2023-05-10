@@ -96,7 +96,6 @@ class MyViewController(MyView):
                 target.pack(expand=False, fill="x")
 
     def get_thumb(self, target:Label, url:str, id):
-        master=target.master
 
         if os.path.exists(f"{os.path.dirname(__file__)}\\thumbs\\thumb{id}.jpg"):
             self.set_image(target, id)
@@ -123,23 +122,24 @@ class MyViewController(MyView):
         try:
             target = threading.Thread(
                 target=youtuber.GetNewVideo, args=(video_link, False, True, child_conn))
-            # target.start()
-            target.run()
+            
+            target.start()
             filesize = parent_conn.recv()
+
             if filesize != None:
-                print(f"filesize: {filesize}")
-                button_id.config(text=f"Downloading: {filesize}", bg="white", state="disabled")
+                print(str(filesize))
+                button_id.config(text=f"Downloading: {str(filesize)}kb", bg="gray", state="disabled")
                 self.myFrame02.update_idletasks()
-                print("targetRuned")
-                if parent_conn.recv():
-                    print("targetJoined")
-                    button_id.config(text="Concluido", bg="green", state="normal")
-                    self.myFrame02.update_idletasks()
-                    print("O download do video foi concluido.")
-                else:
-                    raise TimeoutError
+                target.join()
+           
+            if parent_conn.recv():
+                print("targetJoined")
+                button_id.config(text="Concluido", bg="green", state="normal")
+                self.myFrame02.update_idletasks()
+                print("O download do video foi concluido.")
             else:
                 raise TimeoutError
+            
         except:
             button_id.config(text="Erro. Tente Novamente", bg="red", state="normal")
             self.myFrame02.update_idletasks()
@@ -184,5 +184,6 @@ class View:
 if __name__ == "__main__":
     # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt"
     # "PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G"
-    view = View("PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G")
+    # "PLlBnICoI-g-d-J57QIz6Tx5xtUDGQdBFB"
+    view = View("PLlBnICoI-g-d-J57QIz6Tx5xtUDGQdBFB")
     view.build()

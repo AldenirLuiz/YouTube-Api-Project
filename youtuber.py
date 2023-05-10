@@ -34,16 +34,8 @@ class GetNewVideo:
         print("Get_Video")
         source = self.source.streams.get_lowest_resolution()
         filesize = source.filesize_kb
-        
-        if source != None:
-            self.connection.send(filesize)
-            print(f"eventSendTRUE | Filesize: {filesize}")
-        else:
-            print("eventSendNONE")
-            self.connection.send(None)
-            print("eventClosed")
-            raise ConnectionAbortedError
-            
+        self.connection.send(filesize)
+        print(f"eventSendTRUE | Filesize: {filesize}")
         
         try:
             print("eventDownloadStart")
