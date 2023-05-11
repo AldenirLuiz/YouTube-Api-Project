@@ -1,7 +1,7 @@
 import os
 from random import choice
 from MyYouTube_API import MyYoutube
-from tkinter import Tk,  Frame, Label, Canvas, Button, Scrollbar, VERTICAL
+from tkinter import Tk,  Frame, Label, Canvas, Button, Scrollbar, VERTICAL, PhotoImage
 import sys 
 from PIL import ImageTk, Image
 import threading
@@ -61,9 +61,13 @@ class MyViewController(MyView):
                 f"descD{count}": Label(tempFrame, text=f'Data: {item["snippet"]["publishedAt"]}', anchor="sw"),
                 f"descId{count}": Label(tempFrame, text=f'vId: {item["snippet"]["resourceId"]["videoId"]}', anchor="sw"),
                 f"button{count}": Button( # Configurando o botao e a configuracao de funcionalidade
-                    tempFrame, text="Download", relief="flat", bg="cyan", anchor="center",
+                    tempFrame, text="Download Video", relief="flat", bg="cyan", anchor="center",
                     command=lambda id=video_id, btt=count: 
-                    threading.Thread(target=self.download, args=(id, btt)).start())})
+                    threading.Thread(target=self.download, args=(id, btt)).start()),
+                f"button_audio{count}": Button( # Configurando o botao e a configuracao de funcionalidade
+                    tempFrame, text="Download Audio", relief="flat", bg="yellow", anchor="center",
+                    command=lambda id=video_id, btt=f"_audio{count}": 
+                    threading.Thread(target=self.download, args=(id, btt, True)).start())})
             # Configurando a posicao do frame de widgets na visualizacao
             tempFrame.pack(expand=True, fill="x",
                 ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
@@ -93,7 +97,7 @@ class MyViewController(MyView):
             elif "desc" in key:
                 target.pack(expand=False, fill="x", ipadx=1, ipady=1, padx=1, pady=1)
             elif "button" in key:
-                target.pack(expand=False, fill="x")
+                target.pack(side="left", expand=False, fill="x", ipadx=2, ipady=2, padx=2, pady=2)
 
     def get_thumb(self, target:Label, url:str, id):
 
@@ -107,36 +111,43 @@ class MyViewController(MyView):
             
     def set_image(self, target:Label, id):
         master=target.master
-        img = ImageTk.PhotoImage(Image.open(f"thumbs/thumb{id}.jpg"))
+        try: 
+            img = PhotoImage(file=f"thumbs/thumb{id}.jpg")
+        except:
+            img = ImageTk.PhotoImage(Image.open(f"thumbs/thumb{id}.jpg"))
         self.thumbs[str(id)] = img
         target.configure(image=self.thumbs[str(id)], background="red", relief="sunken")
         master.update_idletasks()
         target.update()
         
-    def download(self, video_id, button):
+    def download(self, video_id:str, button:Button, audio_only:bool|None=False):
+        if audio_only:
+            filetype: str = "Audio"
+        else:
+            filetype: str = "Video"
         parent_conn, child_conn = Pipe()
-        print("downloading...")
+        print(f"download {filetype}...")
         video_link: str = f"https://www.youtube.com/watch?v={video_id}"
         button_id: Button = self.widgets[f"button{button}"]
         button_id.config(text="Verificando...", bg="orange", state="disabled")
         try:
             target = threading.Thread(
-                target=youtuber.GetNewVideo, args=(video_link, False, True, child_conn))
+                target=youtuber.GetNewVideo, args=(video_link, audio_only, child_conn))
             
             target.start()
             filesize = parent_conn.recv()
 
             if filesize != None:
                 print(str(filesize))
-                button_id.config(text=f"Downloading: {str(filesize)}kb", bg="gray", state="disabled")
+                button_id.config(text=f"Downloading {filetype}: {str(filesize)}kb", bg="green", state="disabled")
                 self.myFrame02.update_idletasks()
                 target.join()
            
             if parent_conn.recv():
                 print("targetJoined")
-                button_id.config(text="Concluido", bg="green", state="normal")
+                button_id.config(text=f"{filetype} Concluido", bg="green", state="normal")
                 self.myFrame02.update_idletasks()
-                print("O download do video foi concluido.")
+                print(f"O download do {filetype} foi concluido.")
             else:
                 raise TimeoutError
             
@@ -185,5 +196,6 @@ if __name__ == "__main__":
     # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt"
     # "PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G"
     # "PLlBnICoI-g-d-J57QIz6Tx5xtUDGQdBFB"
-    view = View("PLlBnICoI-g-d-J57QIz6Tx5xtUDGQdBFB")
+    # "PLzxQzUX2Qm0lZQbM0SizzgYk0BjaTAy-V"
+    view = View("PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G")
     view.build()
