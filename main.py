@@ -116,7 +116,7 @@ class MyViewController(MyView):
         except:
             img = ImageTk.PhotoImage(Image.open(f"thumbs/thumb{id}.jpg"))
         self.thumbs[str(id)] = img
-        target.configure(image=self.thumbs[str(id)], background="red", relief="sunken")
+        target.configure(image=self.thumbs[str(id)], relief="sunken")
         master.update_idletasks()
         target.update()
         
