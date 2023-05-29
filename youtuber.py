@@ -21,8 +21,9 @@ class GetNewVideo:
         
     def get_video(self):
         try:
-            source = self.source.streams.get_lowest_resolution()
+            source = self.source.streams.get_highest_resolution()
             filesize = source.filesize_kb
+            print(f"Tamanho do video: {filesize}")
             self.connection.send(filesize)
             source.download()
             self.connection.send(True)
@@ -32,7 +33,9 @@ class GetNewVideo:
             print("eventErrorGET_video")
             self.connection.send(False)
             print(self.messages[0])
+            self.connection.close()
             raise ConnectionAbortedError
+        
         
     def get_audio(self):
         try:
