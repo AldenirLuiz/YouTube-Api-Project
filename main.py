@@ -1,7 +1,7 @@
 import os
 from random import choice
 from MyYouTube_API import MyYoutube
-from tkinter import Tk,  Frame, Label, Canvas, Button, Scrollbar, VERTICAL, PhotoImage
+from tkinter import Tk,  Frame, Label, Entry, Canvas, Button, Scrollbar, VERTICAL, PhotoImage
 import sys 
 from PIL import ImageTk, Image
 import threading
@@ -10,24 +10,34 @@ from multiprocessing import Pipe
 from GetThumbs import GetThumb
 from manage import MyKeys as Key
 
+FONTS = [
+        ("consolas", 22),
+        ("arial", 16)]
 
 class MyView:
-    def __init__(self, root:Tk) -> None:
-        self.root:Tk = root
+    def __init__(self, root:Frame) -> None:
+        self.root:Frame = root
         self.myFrame02:Frame = Frame(self.root)
+        
         self.widgets = dict()
         self.thumbs = dict()
+        
         self.myFrame02.grid_rowconfigure(0, weight=1)
         self.myFrame02.grid_columnconfigure(0, weight=1)
         self.myFrame02.grid_propagate(False)
-        self.canvas = Canvas(self.myFrame02)
+        
+        self.canvas = Canvas(self.myFrame02, width=100, height=300)
         self.canvas.grid(row=0, column=0, sticky="news")
+        
         self.scroll_bar = Scrollbar(self.myFrame02, orient=VERTICAL, command = self.canvas.yview)
         self.scroll_bar.grid(row=0, column=1, sticky='ns')
+        
         self.canvas.config(yscrollcommand = self.scroll_bar.set)
-        self.internal_frame = Frame(self.canvas)
+        self.internal_frame = Frame(self.canvas, width=100, height=300)
+        
         self.canvas.create_window((0, 0), window=self.internal_frame, anchor='nw')
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
+        
         self.not_found = ImageTk.PhotoImage(file="notFound.jpg")
         self.myLabel = Label(
             self.internal_frame, text="Videos da Playlist:", 
@@ -42,7 +52,7 @@ class MyView:
         self.canvas.bind_all("<MouseWheel>", self.mouse_event)
 
 class MyViewController(MyView):
-    def __init__(self, root: Tk) -> None:
+    def __init__(self, root) -> None:
         super().__init__(root)
 
     def mouse_event(self, event):
@@ -159,43 +169,68 @@ class MyViewController(MyView):
         
 
 class View:
-    fonts = [
-        ("consolas", 22),
-        ("arial", 16)]
     api_key = choice(Key().keychain)
 
-    def __init__(self, playlist_key:str) -> None:
-        self.window = Tk() # Inicializando janela principal
-        self.primary_frame = Frame(self.window)
-        self.primary_label = Label(self.primary_frame, text="Carregando...")
-        self.primary_frame.pack()
-        self.primary_label.pack()
-        self.primary_frame.update_idletasks()
-        # Inicializado o Id da playlist
-        self.playlist = playlist_key
-
-        self.myView = MyViewController(self.window)
+    def __init__(self) -> None:
+        self.window = Tk()
         
-    def get_api(self): # Captura os dados na api do YouTube
-        api = MyYoutube(self.api_key, self.playlist)
+        self.mainFrame = Frame(self.window)
+        self.mainFrame.pack(expand=True, fill="both", padx=22, pady=22)
+        
+        self.primaryLabel = Label(self.mainFrame, text="Youtube Downloader - By Aldenir", font=FONTS[0])
+        self.primaryLabel.pack()
+        
+        self.divLink = Frame(self.mainFrame)
+        self.divLink.pack(side="top", expand=True, fill="both", padx=22, pady=22)
+        
+        self.entryLabel = Label(self.divLink, text="Playlist Link:", font=FONTS[1], anchor='nw')
+        self.entryLabel.pack(side="top", expand=False, fill="both")
+        self.entry = Entry(self.divLink, width=50)
+        self.entry.pack(side="left", expand=True, fill="both")
+        self.bttSearch = Button(self.divLink, text="Search", font=FONTS[1], command=lambda:self.load_data())
+        self.bttSearch.pack(side="left", expand=True, fill="both")
+        
+        self.divStatus = Frame(self.mainFrame, relief="solid", bd=2)
+        self.divStatus.pack(side="bottom", expand=False, fill="both")
+        
+        self.statusLabel = Label(self.divStatus, text="Status:", font=FONTS[1], anchor='nw')
+        self.statusLabel.pack(side="top", expand=False, fill="both")
+        
+        self.myView = MyViewController(self.divStatus)
+        
+    def get_api(self, link:str): # Captura os dados na api do YouTube
+        api = MyYoutube(self.api_key, link)
         return api.showVideoInfo()["items"]
 
     def build(self): # Chama a visualizacao dos dados
         # Pegando os dados da playlist
-        self.myView.build_view(values=self.get_api())
-        self.myView.show_view()
-
-        self.primary_frame.destroy() # remove a tela de carregamento
+        #self.primary_frame.destroy() # remove a tela de carregamento
         self.myView.internal_frame.update_idletasks()
 
         # Para que o scrow da tela possa funcionar precisa configurar o scrollregion
         self.myView.canvas.config(scrollregion=self.myView.canvas.bbox("all"))
         self.window.mainloop() # Passando o loop para o Tkinter
+        
+    def load_data(self):
+        link = self.entry.get()
+        if link != str():
+            try:
+                values=self.get_api(link)
+                print(values)
+                self.statusLabel.config(text="Status: Link Ok", background="green")
+                self.myView.build_view(values)
+            except:
+                self.statusLabel.config(text="Insira um link Valido!", background="red")
+        else:
+            self.statusLabel.config(text="Insira um link Valido!", background="red")
+        self.myView.show_view()
 
 if __name__ == "__main__":
     # "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt"
     # "PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G"
     # "PLlBnICoI-g-d-J57QIz6Tx5xtUDGQdBFB"
     # "PLzxQzUX2Qm0lZQbM0SizzgYk0BjaTAy-V"
-    view = View("PLt7PgJ6tMUQRDa4C8Jc5_w2AovXNi162G")
+    # "PLRXpT153SXav_D1T-6U02CSHvXgeL1F69"
+    view = View()
     view.build()
+    #print(f"Data: {view.get_api()}")
