@@ -18,6 +18,16 @@ class GetNewVideo:
             self.get_audio()
         else:
             self.get_video()
+    
+    def get_viedeo_res(self):
+        try:
+            print(self.source.streams)
+        except:
+            print("eventErrorGET_video")
+            self.connection.send(False)
+            print(self.messages[0])
+            self.connection.close()
+            raise ConnectionAbortedError
         
     def get_video(self):
         try:
