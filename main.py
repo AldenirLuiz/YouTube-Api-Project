@@ -12,57 +12,51 @@ from manage import MyKeys as Key
 
 FONTS = [
         ("consolas", 22),
-        ("arial", 16)]
+        ("arial", 18)]
 
 class MyView:
     def __init__(self, root:Frame) -> None:
-        self.root:Frame = root
-        self.myFrame02:Frame = Frame(self.root)
+        self.myFrame02:Frame = Frame(root)
         
         self.widgets = dict()
         self.thumbs = dict()
         
-        self.myFrame02.grid_rowconfigure(0, weight=1)
-        self.myFrame02.grid_columnconfigure(0, weight=1)
-        self.myFrame02.grid_propagate(False)
+        self.canvas = Canvas(self.myFrame02)
+        self.canvas.pack(side="left", expand=True, fill="both")
         
-        self.canvas = Canvas(self.myFrame02, width=100, height=300)
-        self.canvas.grid(row=0, column=0, sticky="news")
-        
-        self.scroll_bar = Scrollbar(self.myFrame02, orient=VERTICAL, command = self.canvas.yview)
-        self.scroll_bar.grid(row=0, column=1, sticky='ns')
+        self.scroll_bar = Scrollbar(self.myFrame02, orient=VERTICAL, command=self.canvas.yview)
+        self.scroll_bar.pack(side="right", expand=0, fill="y")
         
         self.canvas.config(yscrollcommand = self.scroll_bar.set)
-        self.internal_frame = Frame(self.canvas, width=100, height=300)
         
+        self.internal_frame = Frame(self.canvas)
         self.canvas.create_window((0, 0), window=self.internal_frame, anchor='nw')
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
         
         self.not_found = ImageTk.PhotoImage(file="notFound.jpg")
-        self.myLabel = Label(
-            self.internal_frame, text="Videos da Playlist:", 
-            font=("consolas", 22)).pack(expand=True, fill="both",
-            ipadx=4, ipady=4, padx=2, pady=2)
-        self.myFrame02.pack(expand=True, fill="both",
-            ipadx=4, ipady=4, padx=2, pady=2)
+        
+        self.myFrame02.pack(expand=1, fill="both", ipadx=4, ipady=4, padx=2, pady=2)
         self.myFrame02.update_idletasks()
+        
         self.internal_frame.update_idletasks()
         self.widgets.update(
             {"master": self.myFrame02})
+        
         self.canvas.bind_all("<MouseWheel>", self.mouse_event)
+        self.canvas.bind_all("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")) )
+        
+    def mouse_event(self, event):
+        self.canvas.yview_scroll(int(-1*event.delta/120), "units")
 
 class MyViewController(MyView):
     def __init__(self, root) -> None:
         super().__init__(root)
-
-    def mouse_event(self, event):
-        self.canvas.yview_scroll(int(-1*event.delta/120), "units")
 
     def build_view(self, values:list):
         viewFrame = Frame(self.internal_frame)
         for count, item in enumerate(values):
             tempFrame = Frame(viewFrame, relief="ridge", bd=2)
             video_id=item["snippet"]["resourceId"]["videoId"]
+            
             # Configurando as propriedades da visualizacao dos dados
             self.widgets.update({
                 f"image{count}": Label(tempFrame, text=f"image{count}", image=self.not_found, anchor="sw"),
@@ -78,8 +72,9 @@ class MyViewController(MyView):
                     tempFrame, text="Download Audio", relief="flat", bg="yellow", anchor="center",
                     command=lambda id=video_id, btt=f"_audio{count}": 
                     threading.Thread(target=self.download, args=(id, btt, True)).start())})
+            
             # Configurando a posicao do frame de widgets na visualizacao
-            tempFrame.pack(expand=True, fill="x",
+            tempFrame.pack(expand=1, fill="x",
                 ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
             
             try: # Lancando uma requisicao em segundo plano para obter a thumbnail do video 
@@ -94,7 +89,8 @@ class MyViewController(MyView):
         # Adicionando a visualizacao ao frame principal
         viewFrame.pack(expand=True, fill="both",
             ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
-        self.myFrame02.config(width=600,height=700)
+        
+        
 
     def show_view(self):
         for key, widget in self.widgets.items():
@@ -175,26 +171,28 @@ class View:
         self.window = Tk()
         
         self.mainFrame = Frame(self.window)
-        self.mainFrame.pack(expand=True, fill="both", padx=22, pady=22)
+        self.mainFrame.pack(expand=True, fill="both")
         
         self.primaryLabel = Label(self.mainFrame, text="Youtube Downloader - By Aldenir", font=FONTS[0])
-        self.primaryLabel.pack()
+        self.primaryLabel.pack(expand=0, fill="x", padx=8)
         
-        self.divLink = Frame(self.mainFrame)
-        self.divLink.pack(side="top", expand=True, fill="both", padx=22, pady=22)
+        self.divLink = Frame(self.mainFrame, height=40)
+        self.divLink.pack(expand=0, fill="both")
         
         self.entryLabel = Label(self.divLink, text="Playlist Link:", font=FONTS[1], anchor='nw')
-        self.entryLabel.pack(side="top", expand=False, fill="both")
-        self.entry = Entry(self.divLink, width=50)
-        self.entry.pack(side="left", expand=True, fill="both")
+        self.entryLabel.pack(side="top", expand=False, fill="x")
+        self.entry = Entry(self.divLink, width=80)
+        self.entry.pack(side="left", expand=1, fill="x", pady=8, padx=0, ipadx=8, ipady=12)
+        self.entry.insert(0, "PLmbM7GweQj2sb68py1IDcXicsfJyyBAUt")
+        
         self.bttSearch = Button(self.divLink, text="Search", font=FONTS[1], command=lambda:self.load_data())
-        self.bttSearch.pack(side="left", expand=True, fill="both")
+        self.bttSearch.pack(side="left", expand=0, fill=None)
         
         self.divStatus = Frame(self.mainFrame, relief="solid", bd=2)
-        self.divStatus.pack(side="bottom", expand=False, fill="both")
+        self.divStatus.pack(expand=True, fill="both")
         
         self.statusLabel = Label(self.divStatus, text="Status:", font=FONTS[1], anchor='nw')
-        self.statusLabel.pack(side="top", expand=False, fill="both")
+        self.statusLabel.pack(side="top", expand=False, fill="x")
         
         self.myView = MyViewController(self.divStatus)
         
@@ -216,7 +214,6 @@ class View:
         if link != str():
             try:
                 values=self.get_api(link)
-                print(values)
                 self.statusLabel.config(text="Status: Link Ok", background="green")
                 self.myView.build_view(values)
             except:
