@@ -1,4 +1,4 @@
-from tkinter import Frame, Label, Button, PhotoImage
+from tkinter import Frame, Label, Button, PhotoImage, Canvas,Scrollbar, VERTICAL
 from GetThumbs import GetThumb
 import threading
 import youtuber
@@ -10,12 +10,49 @@ from View import MyView
 
 class MyViewController(MyView):
     def __init__(self, root) -> None:
-        super().__init__(root)
+        self.myFrame02:Frame = Frame(root)
+        
+        self.widgets = dict()
+        self.thumbs = dict()
+        
+        self.canvas = Canvas(self.myFrame02)
+        self.canvas.pack(side="left", expand=True, fill="both")
+        
+        self.scroll_bar = Scrollbar(self.myFrame02, orient=VERTICAL, command=self.canvas.yview)
+        self.scroll_bar.pack(side="right", expand=0, fill="y")
+        
+        self.canvas.config(yscrollcommand = self.scroll_bar.set)
+        
+        self.internal_frame = Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.internal_frame, anchor='nw')
+        
+        self.not_found = ImageTk.PhotoImage(file="notFound.jpg")
+        
+        self.myFrame02.pack(expand=1, fill="both", ipadx=4, ipady=4, padx=2, pady=2)
+        self.myFrame02.update_idletasks()
+        
+        self.internal_frame.update_idletasks()
+        self.widgets.update(
+            {"master": self.myFrame02})
+        
+        self.canvas.bind_all("<MouseWheel>", self.mouse_event)
+        
+        
+    def mouse_event(self, event):
+        self.canvas.yview_scroll(int(-1*event.delta/120), "units")
+        
+    
+    def configscroll(self):
+        self.canvas.bind_all("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")) )
+    
+    def clear_view(self):
+        self.widgets = dict()
+        self.myFrame02.destroy()
 
     def build_view(self, values:list):
-        viewFrame = Frame(self.internal_frame)
+        
         for count, item in enumerate(values):
-            tempFrame = Frame(viewFrame, relief="ridge", bd=2)
+            tempFrame = Frame(self.internal_frame, relief="ridge", bd=2)
             
             self.config_data_playList(item, count, tempFrame)
             self.request_thumb(item, count)
@@ -24,10 +61,29 @@ class MyViewController(MyView):
             tempFrame.pack(expand=1, fill="x",
                 ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
             
-        # Adicionando a visualizacao ao frame principal
-        viewFrame.pack(expand=True, fill="both",
-            ipadx=4, ipady=4, padx=2, pady=2, anchor="center")
         
+    def build_view_video(self, values: dict):
+        video_id = values["id"]
+        for indexer, video in enumerate(values["data"]["adaptiveFormats"]):
+            #print(f"{video}")
+            tempFrame = Frame(self.internal_frame, relief="ridge", bd=2)
+            self.widgets.update({
+            f"image{indexer}": Label(tempFrame, text=f"image{indexer}", image=self.not_found, anchor="sw"),
+            f"text{indexer}Qualit":  Label(tempFrame, text=f"Qualit: {video['quality']}", anchor="nw"),
+            f"text{indexer}Framerate": Label(tempFrame, text=f"fps: {video.get('fps')}", anchor="nw"),
+            f"text{indexer}Format": Label(tempFrame, text=f"Format: {video['mimeType']}", anchor="nw"),
+            f"text{indexer}Size": Label(tempFrame, text=f"Size: {round(int(video['contentLength'])/1024)}KB", anchor="nw"),
+            
+            f"button{indexer}": Button( # Configurando o botao e a configuracao de funcionalidade
+                tempFrame, text="Download Video", relief="flat", bg="cyan", anchor="center",
+                command=lambda id=video_id, btt=indexer: 
+                threading.Thread(target=self.download, args=(id, btt)).start()),
+            f"button_audio{indexer}": Button( # Configurando o botao e a configuracao de funcionalidade
+                tempFrame, text="Download Audio", relief="flat", bg="yellow", anchor="center",
+                command=lambda id=video_id, btt=f"_audio{indexer}": 
+                threading.Thread(target=self.download, args=(id, f"button_audio{indexer}", True)).start())})
+            
+            tempFrame.pack(expand=1, fill="both", padx=8, pady=8, ipadx=4, ipady=4)
         
     def config_data_playList(self, item, indexer:int, root):
         
@@ -111,8 +167,7 @@ class MyViewController(MyView):
         button_id: Button = self.widgets[f"button{button}"]
         button_id.config(text="Verificando...", bg="orange", state="disabled")
         try:
-            target = threading.Thread(
-                target=youtuber.GetNewVideo, args=(video_link, audio_only, child_conn))
+            target = threading.Thread(target=youtuber.GetNewVideo(video_link, audio_only, child_conn).get_video())
             
             target.start()
             filesize = parent_conn.recv()

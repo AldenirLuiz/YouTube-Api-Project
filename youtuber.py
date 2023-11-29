@@ -1,6 +1,4 @@
 from pytube import YouTube
-import os
-import sys
 from multiprocessing import Pipe
 
 
@@ -14,14 +12,19 @@ class GetNewVideo:
         self.source = YouTube(self.link)
         self.connection: Pipe = conn
 
-        if audio:
-            self.get_audio()
-        else:
-            self.get_video()
+        #if audio:
+        #    self.get_audio()
+        #else:
+        #    self.get_video()
     
-    def get_viedeo_res(self):
+    def get_viedeo_res(self) -> list:
         try:
-            print(self.source.streams)
+            data = {"data": self.source.streaming_data, "thumb":self.source.thumbnail_url, "id":self.source.video_id}
+           
+            #for video in data["formats"]:
+            #    print(video["qualityLabel"])
+            return data
+            
         except:
             print("eventErrorGET_video")
             self.connection.send(False)
@@ -68,6 +71,7 @@ if __name__ == "__main__":
     parent_conn, child_conn = Pipe()
     # https://youtube.com/shorts/E3sIC_g3F3Y?feature=share
     video = GetNewVideo("https://www.youtube.com/watch?v=Lo2qQmj0_h4", None, child_conn)
-    video.get_video()
-    while parent_conn.recv():
-        print(parent_conn.recv())
+    data = video.get_viedeo_res()
+    # while parent_conn.recv():
+    #    print(parent_conn.recv())
+    
