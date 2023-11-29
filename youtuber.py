@@ -20,7 +20,7 @@ class GetNewVideo:
     def get_viedeo_res(self) -> list:
         try:
             data = {"data": self.source.streaming_data, "thumb":self.source.thumbnail_url, "id":self.source.video_id}
-           
+            
             #for video in data["formats"]:
             #    print(video["qualityLabel"])
             return data

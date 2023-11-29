@@ -45,11 +45,8 @@ class View:
         
         if "&list=" in link:
             linked = link[link.index("&list=")::].replace("&list=", "") # limpando id da playlist
-        elif "https://www.youtube.com/watch?v=" in link:
-            return GetNewVideo(link, False).get_viedeo_res
         else:
             linked = link
-            
         api = MyYoutube(self.api_key, linked)
         return api.showVideoInfo()["items"]
 
@@ -66,29 +63,28 @@ class View:
         parent_conn, child_conn = Pipe()
         self.myView.clear_view()
         self.myView = MyViewController(self.divStatus)
+        #self.myView.configscroll()
         
-        
+        self.statusLabel.config(text="Carregando...", background="yellow")
         if link != str():
-            
-            if "&list=" in link:
-                self.statusLabel.config(text="Carregando...", background="yellow")
-                values=self.get_api(link)
-                self.myView.build_view(values)
-                self.divStatus.update_idletasks()
-                
-            else:
-                self.statusLabel.config(text="Carregando...", background="yellow")
-                self.divStatus.update_idletasks()
+            if "https://www.youtube.com/watch?v=" in link and "&list=" not in link:
                 values = GetNewVideo(link, False, parent_conn).get_viedeo_res()
                 self.myView.build_view_video(values)
+            else:
+                values = self.get_api(link)
+                self.myView.build_view(values)
                 
+            self.divStatus.update_idletasks()
             self.myView.show_view()
-            self.myView.configscroll()
+            
             self.statusLabel.config(text="Link OK.", background="green")
             self.divStatus.pack()
         else:
             self.statusLabel.config(text="Insira um link Valido!", background="red")
+        
+        self.mainFrame.config(width=400, height=700)
         self.mainFrame.update_idletasks()
+        
         
 
 if __name__ == "__main__":
